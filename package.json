@@ -14,10 +14,15 @@
     "dev": "node scripts/dev.js",
     "build": "tsc -b && vite build",
     "dist": "npm run build && electron-builder",
+    "dist:win": "npm run build && electron-builder --win",
+    "dist:mac": "npm run build && electron-builder --mac",
+    "dist:linux": "npm run build && electron-builder --linux",
+    "dist:all": "npm run build && electron-builder -wml",
     "lint": "eslint .",
     "preview": "vite preview"
   },
   "dependencies": {
+    "electron-updater": "^6.7.3",
     "lucide-react": "^0.562.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
@@ -50,6 +55,13 @@
     "directories": {
       "output": "release/${version}"
     },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "iamthearchitekt",
+        "repo": "ungoliant"
+      }
+    ],
     "files": [
       "dist",
       "dist-electron"
@@ -60,12 +72,26 @@
       ],
       "icon": "public/icon.png"
     },
+    "mac": {
+      "target": [
+        "dmg"
+      ],
+      "icon": "public/icon.png"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "icon": "public/icon.png",
+      "category": "Utility"
+    },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "shortcutName": "Ungoliant",
-      "installerSidebar": "build/installerSidebar.png",
-      "installerHeader": "build/installerHeader.png"
+      "installerSidebar": "build/installerSidebar.bmp",
+      "installerHeader": "build/installerHeader.bmp"
     }
   }
 }

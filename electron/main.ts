@@ -1,5 +1,7 @@
-import { app, BrowserWindow } from 'electron'
-import path from 'node:path'
+import { app, BrowserWindow, ipcMain, shell } from 'electron';
+import { autoUpdater } from 'electron-updater';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 process.env.DIST = path.join(__dirname, '../dist')
 const isPackaged = app ? app.isPackaged : false;
@@ -70,4 +72,22 @@ app.on('activate', () => {
     }
 })
 
-app.whenReady().then(createWindow)
+app.whenReady().then(() => {
+    createWindow();
+
+    // Check for updates on startup
+    autoUpdater.checkForUpdatesAndNotify();
+
+    // Update Lifecycle Events
+    autoUpdater.on('update-available', () => {
+        console.log('Update available.');
+    });
+
+    autoUpdater.on('update-downloaded', () => {
+        console.log('Update downloaded; will install on quit.');
+    });
+
+    autoUpdater.on('error', (err) => {
+        console.error('Error in auto-updater:', err);
+    });
+});
