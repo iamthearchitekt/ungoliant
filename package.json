@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "description": "Professional 3D Print Filament Estimation utility.",
-  "author": "BSOD Software",
+  "author": "BSOD Software <support@bsod.software>",
   "license": "MIT",
   "repository": {
     "type": "git",
