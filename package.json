@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "description": "Professional 3D Print Filament Estimation utility.",
   "author": "BSOD Software",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/iamthearchitekt/ungoliant.git"
