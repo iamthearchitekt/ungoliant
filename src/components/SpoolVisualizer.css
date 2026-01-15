@@ -1,0 +1,54 @@
+.spool-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    /* Dimensions controlled by inline style now, but defaults helpful */
+}
+
+/* SVG specific styles */
+.spool-container svg circle,
+.spool-container svg line {
+    transform-origin: center;
+}
+
+.blueprint-line {
+    stroke: rgba(255, 255, 255, 0.4);
+    stroke-width: 1px;
+}
+
+.blueprint-line.faint {
+    stroke: rgba(255, 255, 255, 0.1);
+}
+
+.spool-label {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    pointer-events: none;
+    z-index: 20;
+    text-align: center;
+}
+
+.spool-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-main);
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+    line-height: 1;
+}
+
+.spool-value.warning {
+    color: #ef4444;
+    text-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+}
+
+.spool-sub {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin-top: 4px;
+}

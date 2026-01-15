@@ -1,0 +1,23 @@
+.titlebar {
+    height: 35px;
+    /* Match overlay height */
+    width: 100%;
+    display: flex;
+    align-items: center;
+    padding-left: var(--spacing-md);
+    /* background-color: var(--bg-app); */
+    /* Transparent to let window bg show? */
+    border-bottom: 1px solid var(--border-subtle);
+    position: relative;
+    z-index: 50;
+}
+
+.titlebar-content {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--text-muted);
+}

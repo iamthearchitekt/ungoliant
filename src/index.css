@@ -1,0 +1,120 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  /* Colors - Zinc Palette for Dark Mode */
+  --bg-app: #09090b;
+  /* Zinc 950 */
+  --bg-surface: #18181b;
+  /* Zinc 900 */
+  --bg-surface-hover: #27272a;
+  /* Zinc 800 */
+
+  --border-subtle: #27272a;
+  /* Zinc 800 */
+  --border-strong: #3f3f46;
+  /* Zinc 700 */
+
+  --text-main: #f4f4f5;
+  /* Zinc 100 */
+  --text-muted: #a1a1aa;
+  /* Zinc 400 */
+  --text-dim: #52525b;
+  /* Zinc 600 */
+
+  /* Accent - Green */
+  --accent-primary: #22c55e;
+  /* Green 500 */
+  --accent-hover: #16a34a;
+  /* Green 600 */
+  --accent-glow: rgba(34, 197, 94, 0.2);
+
+  /* Spacing */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+
+  /* Radius */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-full: 9999px;
+
+  /* Font */
+  --font-sans: 'Inter', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background-color: var(--bg-app);
+  color: var(--text-main);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+  /* App-like feel */
+  user-select: none;
+  /* Prevent text selection */
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--bg-surface-hover);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-strong);
+}
+
+/* Utilities */
+.app-region-drag {
+  -webkit-app-region: drag;
+}
+
+.app-region-no-drag {
+  -webkit-app-region: no-drag;
+}
+
+/* Layout */
+#root {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-family: inherit;
+}
+
+.help-button-toggle:hover {
+  color: var(--accent-primary) !important;
+}
+
+@keyframes modalSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
