@@ -40,7 +40,6 @@ USAGE INSTRUCTIONS
 CREDITS & SUPPORT
 ------------------------------------------------------------------------
 A product of BSOD Software.
-Official Repository: https://github.com/iamthearchitekt/ungoliant
 For support and updates, please check the help guide within the 
 application or visit our distribution portal.
 
