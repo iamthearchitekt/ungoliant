@@ -21,6 +21,10 @@ export interface CalculationState {
     printWeight: string; // g (New: Required for print)
     filamentDiameter: string; // mm
 
+    // Advanced / Multi-Plate
+    isAdvanced: boolean;
+    plates: { id: string, mass: string }[];
+
     // Price
     costPerKg: string; // currency
 
@@ -35,6 +39,8 @@ export interface CalculationState {
     // Computed
     netWeight: number; // g
     usedWeight: number; // g
+    totalProjectWeight: number; // g
+    spoolsNeeded: number;
     remainingAfterPrint: number; // g
     remainingPercentage: number;
     estimatedLength: number; // m
@@ -45,7 +51,6 @@ export interface CalculationState {
 export function calculateFilament(state: CalculationState): Partial<CalculationState> {
     const gross = parseFloat(state.grossWeight) || 0;
     const spool = parseFloat(state.spoolWeight) || 0;
-    const printRequired = parseFloat(state.printWeight) || 0;
     const capacity = parseFloat(state.spoolCapacity) || 1000;
     const density = state.density || 1.24;
     const diameter = parseFloat(state.filamentDiameter) || 1.75;
@@ -62,12 +67,30 @@ export function calculateFilament(state: CalculationState): Partial<CalculationS
         netAvailable = Math.max(0, gross - spool);
     }
 
-    // 2. Calculate Remaining AFTER Print
+    // 2. Determine Required Weight (Single vs Multi-Plate)
+    let printRequired = 0;
+    let totalProjectWeight = 0;
+
+    if (state.isAdvanced && state.plates.length > 0) {
+        totalProjectWeight = state.plates.reduce((sum, p) => sum + (parseFloat(p.mass) || 0), 0);
+        // In advanced mode, the "first plate" or current build might be what we check against the current spool
+        // But the user wants project-wide estimation. 
+        // Let's assume the "Print Required" for the CURRENT spool is the first plate if we're thinking about "what's on the printer now"
+        // But for "Spools Needed", we use the total.
+        printRequired = parseFloat(state.plates[0]?.mass) || 0;
+    } else {
+        printRequired = parseFloat(state.printWeight) || 0;
+        totalProjectWeight = printRequired;
+    }
+
+    // 3. Spools Needed calculation
+    const spoolsNeeded = capacity > 0 ? Math.ceil(totalProjectWeight / capacity) : 1;
+
+    // 4. Calculate Remaining AFTER Print (for the current/next plate)
     let remainingAfter = netAvailable - printRequired;
     let isInsufficient = remainingAfter < 0;
 
-    // 3. Percentage Calculation for Visualizer
-    // We visually represent how much of the "Total Capacity" is left after the print
+    // 5. Percentage Calculation for Visualizer
     let percentage = 100;
     if (capacity > 0) {
         percentage = (remainingAfter / capacity) * 100;
@@ -80,11 +103,13 @@ export function calculateFilament(state: CalculationState): Partial<CalculationS
     const lengthCm = volumeCm3 / area;
     const lengthM = lengthCm / 100;
 
-    const printCost = (printRequired / 1000) * cost;
+    const printCost = (totalProjectWeight / 1000) * cost;
 
     return {
         netWeight: netAvailable,
         usedWeight: printRequired,
+        totalProjectWeight: totalProjectWeight,
+        spoolsNeeded: spoolsNeeded,
         remainingAfterPrint: remainingAfter,
         remainingPercentage: percentage,
         estimatedLength: lengthM,
