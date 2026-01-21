@@ -36,19 +36,72 @@
 
 .input-wrapper input.has-error {
     border-color: #ef4444;
-    /* Red 500 */
 }
 
+/* Force Hide Native Spinners Everywhere for this component */
+.input-wrapper input::-webkit-outer-spin-button,
+.input-wrapper input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.input-wrapper input[type=number] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+/* Suffix positioning */
 .input-suffix {
     position: absolute;
     right: var(--spacing-md);
     color: var(--text-muted);
     font-size: 0.85rem;
     pointer-events: none;
+    background: transparent;
 }
+
+/* Custom Spinner Styling */
+.custom-spinners {
+    position: absolute;
+    right: 4px;
+    /* Inside the input */
+    top: 4px;
+    bottom: 4px;
+    display: flex;
+    flex-direction: column;
+    width: 20px;
+}
+
+.spin-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--accent-primary);
+    /* Green #22c55e */
+    padding: 0;
+    transition: background 0.1s;
+    border-radius: 2px;
+}
+
+.spin-btn:hover {
+    background: rgba(34, 197, 94, 0.15);
+    color: var(--accent-hover);
+}
+
+.spin-btn:active {
+    background: rgba(34, 197, 94, 0.3);
+}
+
+/* Adjust input padding if spinners are present works best if we use general sibling selector or just know it's a number  */
+/* But we can't select parent based on child in CSS yet. Assume number inputs generally have them? */
+/* Actually, let's just make sure text doesn't flow under them. */
+/* Ideally we apply a class to input if custom spinners are on, but Input.tsx structure makes input a sibling. */
 
 .input-error {
     font-size: 0.75rem;
     color: #ef4444;
-    /* Red 500 */
 }

@@ -1,102 +1,131 @@
 import './SpoolVisualizer.css';
-import './SpoolVisualizer.css';
 
-interface Props {
+interface SpoolData {
+    index: number;
     percentage: number;
-    isInsufficient?: boolean;
+    status: 'full' | 'partial' | 'empty' | 'insufficient';
 }
 
-export function SpoolVisualizer({ percentage, isInsufficient }: Props) {
-    const safePercentage = Math.max(0, Math.min(100, percentage));
+interface Props {
+    spools: SpoolData[];
+}
+
+export function SpoolVisualizer({ spools }: Props) {
+    const spoolList = spools && spools.length > 0 ? spools : [{ index: 0, percentage: 0, status: 'empty' as const }];
 
     // SVG Config
-    const size = 200;
+    const size = 160;
     const center = size / 2;
-    const outerRadius = 90;
-    const innerRadius = 30;
-    const filamentMaxWidth = outerRadius - innerRadius - 5;
+    const outerRadius = 70;
+    const innerRadius = 25; // Reverted to standard size for better proportion
 
-    // The "Filament" is a thick ring whose width or opacity could represent level, 
-    // but the user likes the "Green graph fills and moves" like a circular graph.
-    // So I'll keep the circular stroke but place it within the technical drawing.
+    // Calculate nonlinear depletion (physically accurate cross-sectional area)
+    // Area = pi * (R_outer^2 - R_inner^2)
+    const maxArea = Math.PI * (Math.pow(outerRadius, 2) - Math.pow(innerRadius, 2));
 
-    // Circumference for the green fill
-    const fillRadius = (outerRadius + innerRadius) / 2;
-    const circumference = 2 * Math.PI * fillRadius;
-    const offset = circumference - (safePercentage / 100) * circumference;
-
-    const color = isInsufficient ? '#ef4444' : 'var(--accent-primary)';
-
-    // Spoke angles
-    const spokes = [0, 60, 120, 180, 240, 300];
+    console.log('Visualizer Render:', { spools });
 
     return (
-        <div className="spool-container" style={{ width: size, height: size }}>
-            <svg
-                width={size}
-                height={size}
-                viewBox={`0 0 ${size} ${size}`}
-                className="technical-drawing"
-            >
-                {/* Crosshair lines for technical look */}
-                <line x1="0" y1={center} x2={size} y2={center} className="blueprint-line faint" />
-                <line x1={center} y1="0" x2={center} y2={size} className="blueprint-line faint" />
+        <div className="spool-stack-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+            {spoolList.map((spool) => {
+                const safePercentage = Math.max(0, Math.min(100, spool.percentage));
+                const isEmpty = safePercentage === 0;
+                const isRed = spool.status === 'insufficient';
+                const color = isRed ? '#ef4444' : 'var(--accent-primary)';
 
-                {/* Outer Rim Structure */}
-                <circle cx={center} cy={center} r={outerRadius} fill="none" className="blueprint-line" />
-                <circle cx={center} cy={center} r={outerRadius - 4} fill="none" className="blueprint-line faint" />
+                // Calculate current outer radius based on remaining area percentage
+                // CurrentArea = Percentage * MaxArea
+                // CurrentArea = pi * (R_curr^2 - R_inner^2)
+                // R_curr = sqrt( (CurrentArea / pi) + R_inner^2 )
+                const currentArea = (safePercentage / 100) * maxArea;
+                const currentOuterRadius = Math.sqrt((currentArea / Math.PI) + Math.pow(innerRadius, 2));
 
-                {/* Inner Hub Structure */}
-                <circle cx={center} cy={center} r={innerRadius} fill="none" className="blueprint-line" />
-                <circle cx={center} cy={center} r={10} fill="none" className="blueprint-line" />
+                // For SVG stroke:
+                // Width = Outer - Inner
+                // Radius = Inner + (Width / 2)
+                const currentThickness = Math.max(0, currentOuterRadius - innerRadius);
+                const strokeRadius = innerRadius + (currentThickness / 2);
 
-                {/* Spokes */}
-                {spokes.map(angle => (
-                    <line
-                        key={angle}
-                        x1={center + Math.cos(angle * Math.PI / 180) * 10}
-                        y1={center + Math.sin(angle * Math.PI / 180) * 10}
-                        x2={center + Math.cos(angle * Math.PI / 180) * outerRadius}
-                        y2={center + Math.sin(angle * Math.PI / 180) * outerRadius}
-                        className="blueprint-line"
-                    />
-                ))}
+                return (
+                    <div key={spool.index} className="spool-unit" style={{
+                        width: size,
+                        height: size,
+                        position: 'relative',
+                        zIndex: 1,
+                        opacity: isEmpty ? 0.3 : 1, // Dim empty spools so they don't distract
+                        transition: 'opacity 0.3s'
+                    }}>
+                        <svg
+                            width={size}
+                            height={size}
+                            viewBox={`0 0 ${size} ${size}`}
+                            className="technical-drawing"
+                            style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))' }}
+                        >
+                            {/* Crosshair lines */}
+                            <line x1="0" y1={center} x2={size} y2={center} className="blueprint-line faint" />
+                            <line x1={center} y1="0" x2={center} y2={size} className="blueprint-line faint" />
 
-                {/* Green Fill (Filament) - Drawn like a circular progress bar inside the flanges */}
-                <circle
-                    cx={center}
-                    cy={center}
-                    r={fillRadius}
-                    fill="none"
-                    stroke={color}
-                    strokeWidth={filamentMaxWidth}
-                    strokeDasharray={circumference}
-                    strokeDashoffset={offset}
-                    strokeOpacity="0.4"
-                    style={{
-                        transition: 'stroke-dashoffset 1s ease-in-out, stroke 0.3s',
-                        transform: 'rotate(-90deg)',
-                        transformOrigin: 'center'
-                    }}
-                />
-            </svg>
+                            {/* Spool Structure (Fixed Background) */}
+                            {/* Outer Rim */}
+                            <circle cx={center} cy={center} r={outerRadius} fill="var(--bg-card)" stroke="var(--border-subtle)" strokeWidth="1" />
+                            <circle cx={center} cy={center} r={outerRadius - 4} fill="none" className="blueprint-line faint" />
 
-            {/* Center Label */}
-            <div className="spool-label">
-                {isInsufficient ? (
-                    <>
-                        <span className="spool-value warning">LOW</span>
-                        <span className="spool-sub">FILAMENT</span>
-                    </>
-                ) : (
-                    <>
-                        <span className="spool-value">
-                            {Math.round(safePercentage)}%
-                        </span>
-                        <span className="spool-sub">REMAINING</span>
-                    </>
-                )}
-            </div>
+                            {/* Inner Hub */}
+                            <circle cx={center} cy={center} r={innerRadius} fill="var(--bg-surface)" className="blueprint-line" />
+
+                            {/* Spokes (Fixed) */}
+                            {[0, 60, 120, 180, 240, 300].map(angle => (
+                                <line
+                                    key={angle}
+                                    x1={center + Math.cos(angle * Math.PI / 180) * 10}
+                                    y1={center + Math.sin(angle * Math.PI / 180) * 10}
+                                    x2={center + Math.cos(angle * Math.PI / 180) * outerRadius}
+                                    y2={center + Math.sin(angle * Math.PI / 180) * outerRadius}
+                                    className="blueprint-line"
+                                    opacity="0.3"
+                                />
+                            ))}
+
+                            {/* Filament Fill (Variable Thickness) */}
+                            {safePercentage > 0 && (
+                                <circle
+                                    cx={center}
+                                    cy={center}
+                                    r={strokeRadius}
+                                    fill="none"
+                                    stroke={color}
+                                    strokeWidth={currentThickness}
+                                    strokeOpacity="0.8"
+                                    style={{
+                                        transition: 'stroke-width 0.5s ease-out, r 0.5s ease-out'
+                                    }}
+                                />
+                            )}
+                        </svg>
+
+                        {/* Label Overlay */}
+                        <div className="spool-label-overlay" style={{
+                            position: 'absolute',
+                            top: '50%',
+                            left: '50%',
+                            transform: 'translate(-50%, -50%)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            pointerEvents: 'none'
+                        }}>
+                            {isRed ? (
+                                <span style={{ color: '#ef4444', fontWeight: 'bold', fontSize: '0.8rem' }}>LOW</span>
+                            ) : (
+                                !isEmpty && <span style={{ color: 'var(--text-primary)', fontWeight: 'bold', fontSize: '0.9rem' }}>
+                                    {Math.round(safePercentage)}%
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                );
+            })}
         </div>
     );
 }

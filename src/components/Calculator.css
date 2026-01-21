@@ -142,6 +142,22 @@
     text-shadow: 0 0 15px var(--accent-glow);
 }
 
+.result-item.insufficient-spools {
+    background: rgba(239, 68, 68, 0.1);
+    /* Red tint */
+    border: 1px solid #ef4444;
+}
+
+.result-item.insufficient-spools .label {
+    color: #ef4444;
+    font-weight: bold;
+}
+
+.result-item.insufficient-spools .value {
+    color: #ef4444;
+    text-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
+}
+
 /* Advanced Features */
 .advanced-toggle-btn,
 .smart-sync-btn {

@@ -3,8 +3,9 @@ import { Card } from './ui/Card';
 import { Input } from './ui/Input';
 import { SpoolVisualizer } from './SpoolVisualizer';
 import { MATERIALS, calculateFilament } from '../lib/filament';
+import { parseProjectFile } from '../lib/fileParser';
 import type { CalculationState } from '../lib/filament';
-import { Calculator as CalcIcon, DollarSign, Scale } from 'lucide-react';
+import { Calculator as CalcIcon, DollarSign, Scale, FileUp, X } from 'lucide-react';
 import { BambuDropZone } from './BambuDropZone';
 import './Calculator.css';
 
@@ -32,7 +33,11 @@ export function Calculator() {
         spoolCapacity: '1000',
         isInsufficient: false,
         isPartiallyUsed: false,
-        inputPercentage: '100'
+        inputPercentage: '100',
+        isWasteCalcEnabled: false,
+        numberOfColors: 4,
+        spoolQuantity: 1,
+        spoolsData: [{ index: 0, percentage: 100, status: 'full' }]
     });
 
     const [isSmartSyncOpen, setIsSmartSyncOpen] = useState(false);
@@ -53,10 +58,13 @@ export function Calculator() {
         state.inputPercentage,
         state.spoolCapacity,
         state.isAdvanced,
-        state.plates
+        state.plates,
+        state.isWasteCalcEnabled,
+        state.numberOfColors,
+        state.spoolQuantity
     ]);
 
-    const handleChange = (field: keyof CalculationState, value: string | boolean) => {
+    const handleChange = (field: keyof CalculationState, value: string | boolean | number) => {
         setState(prev => ({ ...prev, [field]: value }));
     };
 
@@ -136,6 +144,15 @@ export function Calculator() {
                             value={state.filamentDiameter}
                             onChange={(e) => handleChange('filamentDiameter', e.target.value)}
                         />
+
+                        <Input
+                            label="Quantity"
+                            type="number"
+                            value={state.spoolQuantity.toString()}
+                            onChange={(e) => handleChange('spoolQuantity', Math.max(1, Math.min(4, parseInt(e.target.value) || 1)))}
+                            min="1"
+                            max="4"
+                        />
                     </div>
                 </Card>
 
@@ -202,15 +219,67 @@ export function Calculator() {
                                                     onChange={(e) => updatePlate(plate.id, e.target.value)}
                                                     style={{ flex: 1 }}
                                                 />
-                                                {state.plates.length > 1 && (
+                                                <div style={{ display: 'flex', gap: '4px', marginBottom: '2px' }}>
                                                     <button
-                                                        onClick={() => removePlate(plate.id)}
-                                                        className="remove-plate-btn"
-                                                        title="Remove Plate"
+                                                        onClick={() => document.getElementById(`plate-upload-${plate.id}`)?.click()}
+                                                        className="plate-action-btn upload"
+                                                        title="Smart Sync this plate"
+                                                        style={{
+                                                            width: '32px',
+                                                            height: '32px',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            borderRadius: '6px',
+                                                            border: '1px solid var(--border-subtle)',
+                                                            background: 'var(--bg-surface-hover)',
+                                                            color: 'var(--accent-primary)',
+                                                            cursor: 'pointer'
+                                                        }}
                                                     >
-                                                        ×
+                                                        <FileUp size={16} />
                                                     </button>
-                                                )}
+                                                    <input
+                                                        type="file"
+                                                        id={`plate-upload-${plate.id}`}
+                                                        style={{ display: 'none' }}
+                                                        accept=".gcode,.3mf"
+                                                        onChange={async (e) => {
+                                                            const file = e.target.files?.[0];
+                                                            if (file) {
+                                                                try {
+                                                                    const weight = await parseProjectFile(file);
+                                                                    updatePlate(plate.id, weight.toFixed(2));
+                                                                } catch (err) {
+                                                                    console.error(err);
+                                                                    // Optional: Add a toast or small error state here
+                                                                }
+                                                                e.target.value = ''; // Reset
+                                                            }
+                                                        }}
+                                                    />
+                                                    {state.plates.length > 1 && (
+                                                        <button
+                                                            onClick={() => removePlate(plate.id)}
+                                                            className="plate-action-btn remove"
+                                                            title="Remove Plate"
+                                                            style={{
+                                                                width: '32px',
+                                                                height: '32px',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center',
+                                                                borderRadius: '6px',
+                                                                border: '1px solid var(--border-subtle)',
+                                                                background: 'var(--bg-surface-hover)',
+                                                                color: 'var(--text-muted)',
+                                                                cursor: 'pointer'
+                                                            }}
+                                                        >
+                                                            <X size={16} />
+                                                        </button>
+                                                    )}
+                                                </div>
                                             </div>
                                         ))}
                                         <button onClick={addPlate} className="add-plate-btn">
@@ -288,6 +357,33 @@ export function Calculator() {
                                     </label>
                                 </div>
                             )}
+
+                            <div className="checkbox-group" style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--spacing-md)' }}>
+                                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                                    <input
+                                        type="checkbox"
+                                        checked={state.isWasteCalcEnabled}
+                                        onChange={(e) => handleChange('isWasteCalcEnabled', e.target.checked)}
+                                        style={{ accentColor: 'var(--accent-primary)' }}
+                                    />
+                                    Include AMS Waste
+                                </label>
+                                {state.isWasteCalcEnabled && (
+                                    <div style={{ marginTop: 'var(--spacing-sm)' }}>
+                                        <Input
+                                            label="Colors"
+                                            type="number"
+                                            value={state.numberOfColors.toString()}
+                                            onChange={(e) => handleChange('numberOfColors', parseInt(e.target.value) || 1)}
+                                            style={{ backgroundColor: 'var(--bg-surface)' }}
+                                        />
+                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginTop: '4px' }}>
+                                            Adds ~5% per extra color
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
                         </div>
                     </div>
                 </Card>
@@ -302,6 +398,7 @@ export function Calculator() {
                             placeholder="0.00"
                             suffix="$"
                             type="number"
+                            hideSpinners={true}
                             value={state.costPerKg}
                             onChange={(e) => handleChange('costPerKg', e.target.value)}
                         />
@@ -320,9 +417,9 @@ export function Calculator() {
             <div className="calc-results">
                 <Card className="visualizer-card">
                     <SpoolVisualizer
-                        percentage={state.remainingPercentage}
-                        isInsufficient={state.isInsufficient}
+                        spools={state.spoolsData}
                     />
+
 
                     <div className="results-grid">
                         {state.isAdvanced && (
@@ -331,7 +428,7 @@ export function Calculator() {
                                     <span className="label">Total Project Mass</span>
                                     <span className="value">{state.totalProjectWeight.toFixed(0)} <span className="unit">g</span></span>
                                 </div>
-                                <div className="result-item highlight">
+                                <div className={`result-item ${state.spoolsNeeded > state.spoolQuantity ? 'insufficient-spools' : 'highlight'}`}>
                                     <span className="label">Spools Required</span>
                                     <span className="value">{state.spoolsNeeded} <span className="unit">x</span></span>
                                 </div>

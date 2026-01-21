@@ -24,6 +24,11 @@ export interface CalculationState {
     // Advanced / Multi-Plate
     isAdvanced: boolean;
     plates: { id: string, mass: string }[];
+    spoolQuantity: number; // 1-4
+
+    // AMS Waste Calculation
+    isWasteCalcEnabled: boolean;
+    numberOfColors: number;
 
     // Price
     costPerKg: string; // currency
@@ -46,6 +51,7 @@ export interface CalculationState {
     estimatedLength: number; // m
     printCost: number; // currency
     isInsufficient: boolean;
+    spoolsData: { index: number, percentage: number, status: 'full' | 'partial' | 'empty' | 'insufficient' }[];
 }
 
 export function calculateFilament(state: CalculationState): Partial<CalculationState> {
@@ -64,8 +70,19 @@ export function calculateFilament(state: CalculationState): Partial<CalculationS
         netAvailable = (inputPct / 100) * capacity;
     } else {
         // Standard mode: Weighing
+        // Standard mode: Weighing
         netAvailable = Math.max(0, gross - spool);
     }
+
+    // Multi-Spool Support:
+    // If quantity > 1, we assume all spools are full EXCEPT the one being weighed?
+    // OR we assume they are "Identical Rolls in Stock".
+    // User Request: "if the person has 2 rolls or more in stock they can indicate that."
+    // Interpretation: "1 partially used roll (weighed) + (N-1) Full Rolls".
+    // Let's assume (N-1) * Capacity.
+    const numberOfSpools = Math.max(1, state.spoolQuantity || 1);
+    const extraSpoolsWeight = (numberOfSpools - 1) * capacity;
+    const totalNetAvailable = netAvailable + extraSpoolsWeight;
 
     // 2. Determine Required Weight (Single vs Multi-Plate)
     let printRequired = 0;
@@ -73,31 +90,84 @@ export function calculateFilament(state: CalculationState): Partial<CalculationS
 
     if (state.isAdvanced && state.plates.length > 0) {
         totalProjectWeight = state.plates.reduce((sum, p) => sum + (parseFloat(p.mass) || 0), 0);
-        // In advanced mode, the "first plate" or current build might be what we check against the current spool
-        // But the user wants project-wide estimation. 
-        // Let's assume the "Print Required" for the CURRENT spool is the first plate if we're thinking about "what's on the printer now"
-        // But for "Spools Needed", we use the total.
-        printRequired = parseFloat(state.plates[0]?.mass) || 0;
+        // Corrected Logic: The user wants to see if their stock covers the ENTIRE project.
+        // Therefore, the "Used Weight" for calculation should be the Total Project Weight.
+        printRequired = totalProjectWeight;
     } else {
         printRequired = parseFloat(state.printWeight) || 0;
         totalProjectWeight = printRequired;
+    }
+
+    // Apply Waste Calculation (AMS)
+    if (state.isWasteCalcEnabled && state.numberOfColors > 1) {
+        // Heuristic: 5% waste per additional color
+        // e.g. 4 colors = 3 changes * 5% = 15% extra
+        const wasteMultiplier = 1 + ((state.numberOfColors - 1) * 0.05);
+        totalProjectWeight *= wasteMultiplier;
+        printRequired *= wasteMultiplier;
     }
 
     // 3. Spools Needed calculation
     const spoolsNeeded = capacity > 0 ? Math.ceil(totalProjectWeight / capacity) : 1;
 
     // 4. Calculate Remaining AFTER Print (for the current/next plate)
-    const remainingAfter = netAvailable - printRequired;
+    // 4. Calculate Remaining AFTER Print (for the current/next plate)
+    // We compare TOTAL AVAILABLE vs Required
+    const remainingAfter = totalNetAvailable - printRequired;
     const isInsufficient = remainingAfter < 0;
 
     // 5. Percentage Calculation for Visualizer
-    let percentage = 100;
-    if (capacity > 0) {
-        percentage = (remainingAfter / capacity) * 100;
+    // We need to calculate the state of each spool.
+    // Total Remaining: Math.max(0, remainingAfter) -> Distribute bottom-up.
+    const remainingToDistribute = Math.max(0, remainingAfter);
+
+    const spoolsData = [];
+    let currentDistributed = 0;
+
+    // Spools are indexed 0 to N-1. 
+    // Let's say index 0 is TOP (First to be used), index N-1 is BOTTOM.
+    // We fill from bottom up.
+    // Actually, visually we want 0 at top.
+
+    for (let i = numberOfSpools - 1; i >= 0; i--) {
+        // Capacity of THIS spool. 
+        // If i === 0 (The "Active" spool being weighed), its max capacity is theoretically 'capacity',
+        // but its CURRENT content is 'netAvailable'. 
+        // But for "Remaining after print", we treat it as a pool.
+        // Simplified: Each spool slot has 'capacity'.
+        // We fill them up.
+
+        let spoolCap = capacity;
+
+        // Amount this spool holds
+        const fillAmount = Math.min(spoolCap, Math.max(0, remainingToDistribute - currentDistributed));
+        currentDistributed += fillAmount;
+
+        const pct = (fillAmount / spoolCap) * 100;
+
+        // Determine status
+        let status: 'full' | 'partial' | 'empty' | 'insufficient' = 'empty';
+        if (pct >= 99.9) status = 'full';
+        else if (pct > 0) status = 'partial';
+        else if (isInsufficient && i === 0) status = 'insufficient'; // Mark top as insufficient if red
+
+        spoolsData.unshift({
+            index: i,
+            percentage: pct,
+            status
+        });
     }
 
+    // Consolidated Percentage (Total System Status)
+    let percentage = 0;
+    const totalSystemCapacity = capacity * numberOfSpools;
+    if (totalSystemCapacity > 0) {
+        percentage = (remainingToDistribute / totalSystemCapacity) * 100;
+    }
+
+
     // Volume & Length
-    const volumeCm3 = netAvailable / density;
+    const volumeCm3 = totalNetAvailable / density;
     const radiusCm = (diameter / 2) / 10;
     const area = Math.PI * Math.pow(radiusCm, 2);
     const lengthCm = volumeCm3 / area;
@@ -114,7 +184,8 @@ export function calculateFilament(state: CalculationState): Partial<CalculationS
         remainingPercentage: percentage,
         estimatedLength: lengthM,
         printCost: printCost,
-        isInsufficient: isInsufficient
+        isInsufficient: isInsufficient,
+        spoolsData: spoolsData
     };
 }
 
