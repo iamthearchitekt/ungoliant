@@ -62,7 +62,7 @@ function App() {
           fontSize: '0.75rem',
           letterSpacing: '0.02em'
         }}>
-          version 1.0.3 - a product of BSOD Software
+          version 1.0.4 - a product of BSOD Software
         </footer>
 
         <HelpOverlay />
