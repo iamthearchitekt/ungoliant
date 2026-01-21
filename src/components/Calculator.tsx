@@ -5,6 +5,7 @@ import { SpoolVisualizer } from './SpoolVisualizer';
 import { MATERIALS, calculateFilament } from '../lib/filament';
 import type { CalculationState } from '../lib/filament';
 import { Calculator as CalcIcon, DollarSign, Scale } from 'lucide-react';
+import { BambuDropZone } from './BambuDropZone';
 import './Calculator.css';
 
 export function Calculator() {
@@ -33,6 +34,8 @@ export function Calculator() {
         isPartiallyUsed: false,
         inputPercentage: '100'
     });
+
+    const [isSmartSyncOpen, setIsSmartSyncOpen] = useState(false);
 
     const [customSpool, setCustomSpool] = useState(false);
 
@@ -88,6 +91,23 @@ export function Calculator() {
         }));
     };
 
+    const handleBambuParse = (weight: number) => {
+        const weightStr = weight.toFixed(2);
+        if (state.isAdvanced) {
+            const newPlate = { id: Math.random().toString(36).substr(2, 9), mass: weightStr };
+            const newPlates = [...state.plates];
+            if (newPlates.length === 1 && !newPlates[0].mass) {
+                newPlates[0] = newPlate;
+            } else {
+                newPlates.push(newPlate);
+            }
+            setState(prev => ({ ...prev, plates: newPlates }));
+        } else {
+            setState(prev => ({ ...prev, printWeight: weightStr }));
+        }
+        setIsSmartSyncOpen(false);
+    };
+
     return (
         <div className="calculator-layout">
             <div className="calc-inputs">
@@ -124,12 +144,20 @@ export function Calculator() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
                             <CalcIcon size={20} /> SPOOL ANALYSIS
                         </div>
-                        <button
-                            className={`advanced-toggle-btn ${state.isAdvanced ? 'active' : ''}`}
-                            onClick={() => handleChange('isAdvanced', !state.isAdvanced)}
-                        >
-                            ADVANCED
-                        </button>
+                        <div className="toggle-group" style={{ display: 'flex', gap: '8px' }}>
+                            <button
+                                className="smart-sync-btn"
+                                onClick={() => setIsSmartSyncOpen(true)}
+                            >
+                                SMART SYNC
+                            </button>
+                            <button
+                                className={`advanced-toggle-btn ${state.isAdvanced ? 'active' : ''}`}
+                                onClick={() => setState(prev => ({ ...prev, isAdvanced: !prev.isAdvanced }))}
+                            >
+                                ADVANCED
+                            </button>
+                        </div>
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 'var(--spacing-xl)', alignItems: 'start' }}>
@@ -320,6 +348,12 @@ export function Calculator() {
                     </div>
                 </Card>
             </div>
+            {isSmartSyncOpen && (
+                <BambuDropZone
+                    onParsed={handleBambuParse}
+                    onClose={() => setIsSmartSyncOpen(false)}
+                />
+            )}
         </div>
     );
 }

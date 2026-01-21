@@ -87,8 +87,8 @@ export function calculateFilament(state: CalculationState): Partial<CalculationS
     const spoolsNeeded = capacity > 0 ? Math.ceil(totalProjectWeight / capacity) : 1;
 
     // 4. Calculate Remaining AFTER Print (for the current/next plate)
-    let remainingAfter = netAvailable - printRequired;
-    let isInsufficient = remainingAfter < 0;
+    const remainingAfter = netAvailable - printRequired;
+    const isInsufficient = remainingAfter < 0;
 
     // 5. Percentage Calculation for Visualizer
     let percentage = 100;
@@ -116,4 +116,86 @@ export function calculateFilament(state: CalculationState): Partial<CalculationS
         printCost: printCost,
         isInsufficient: isInsufficient
     };
+}
+
+/**
+ * Parses G-code or 3MF metadata to extract filament weight in grams.
+ * Supports Bambu Studio, OrcaSlicer, PrusaSlicer, and generic formats.
+ */
+export function parseGCode(content: string): number {
+    // Stage 1: Specific high-confidence patterns
+    const highConfidencePatterns = [
+        /filament used \[g\]\s*[:=]\s*([\d.,\s]+)/i,
+        /total filament used \[g\]\s*[:=]\s*([\d.,\s]+)/i,
+        /estimated filament weight \(g\)\s*[:=]\s*([\d.,\s]+)/i, // OrcaSlicer
+        /filament_weight_g\s*[:=]\s*([\d.,\s]+)/i,
+        /weight\s*[:=]\s*([\d.,\s]+)\s*g/i,
+    ];
+
+    for (const pattern of highConfidencePatterns) {
+        const match = content.match(pattern);
+        if (match && match[1]) {
+            const values = match[1].split(',').map(v => parseFloat(v.trim()));
+            const total = values.reduce((sum, v) => sum + (isNaN(v) ? 0 : v), 0);
+            if (total > 0) return total;
+        }
+    }
+
+    // Stage 2: Parenthetical or trailing gram markers
+    // e.g. ; filament used = 7.82m (23.69g)
+    // e.g. ; filament_weight: 12.3
+    const secondTierPatterns = [
+        /\(([\d.]+)\s*g\)/i,
+        /filament.*?[:=]\s*([\d.]+)\s*g/i,
+        /weight.*?[:=]\s*([\d.]+)\s*g/i
+    ];
+
+    for (const pattern of secondTierPatterns) {
+        const match = content.match(pattern);
+        if (match && match[1]) {
+            const val = parseFloat(match[1]);
+            if (val > 0) return val;
+        }
+    }
+
+    // Stage 3: XML-style tags
+    const xmlPatterns = [
+        /<filament_used_g>([\d.,\s]+)<\/filament_used_g>/i,
+        /<total_filament_used_g>([\d.,\s]+)<\/total_filament_used_g>/i,
+        /<filament_used>([\d.,\s]+)<\/filament_used>/i,
+        /used_g="([\d.,\s]+)"/i, // Bambu slice_info.config
+        /filament_weight\s*=\s*"([\d.,\s]+)"/i
+    ];
+
+    for (const pattern of xmlPatterns) {
+        const match = content.match(pattern);
+        if (match && match[1]) {
+            const values = match[1].split(',').map(v => parseFloat(v.trim()));
+            const total = values.reduce((sum, v) => sum + (isNaN(v) ? 0 : v), 0);
+            if (total > 0) return total;
+        }
+    }
+
+    // Stage 4: Volume fallback (convert mm3/cm3 to g)
+    const volumePatterns = [
+        /filament used \[mm³\]\s*[:=]\s*(\d+\.?\d*)/i,
+        /filament used \[cm³\]\s*[:=]\s*(\d+\.?\d*)/i,
+        /<filament_used_mm3>([\d.]+)<\/filament_used_mm3>/i
+    ];
+
+    for (const pattern of volumePatterns) {
+        const match = content.match(pattern);
+        if (match && match[1]) {
+            const volume = parseFloat(match[1]);
+            const isCm3 = pattern.toString().includes('cm³');
+            const volumeCm3 = isCm3 ? volume : volume / 1000;
+            return volumeCm3 * 1.24; // Standard PLA density fallback
+        }
+    }
+
+    // Stage 5: Final Fuzzy Match
+    const fuzzyMatch = content.match(/filament.+?([\d.]+)\s*g/i);
+    if (fuzzyMatch && fuzzyMatch[1]) return parseFloat(fuzzyMatch[1]);
+
+    return 0;
 }

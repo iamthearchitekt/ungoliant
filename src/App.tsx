@@ -1,11 +1,28 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { TitleBar } from './components/TitleBar';
 import { Calculator } from './components/Calculator';
 import { HelpOverlay } from './components/HelpOverlay';
 import { StingerOverlay } from './components/StingerOverlay';
+import { UpdatePopup } from './components/UpdatePopup';
 
 function App() {
   const [showStinger, setShowStinger] = useState(true);
+  const [updateInfo, setUpdateInfo] = useState<{ version: string } | null>(null);
+
+  useEffect(() => {
+    // Listen for update events from the main process
+    if (window.ipcRenderer) {
+      window.ipcRenderer.on('update-downloaded', (_event: any, version: string) => {
+        setUpdateInfo({ version });
+      });
+    }
+  }, []);
+
+  const handleLaunchUpdate = () => {
+    if (window.ipcRenderer) {
+      window.ipcRenderer.send('restart-and-install');
+    }
+  };
 
   return (
     <>
@@ -45,10 +62,17 @@ function App() {
           fontSize: '0.75rem',
           letterSpacing: '0.02em'
         }}>
-          version 1.0.1 - a product of BSOD Software
+          version 1.0.2 - a product of BSOD Software
         </footer>
 
         <HelpOverlay />
+
+        {updateInfo && (
+          <UpdatePopup
+            version={updateInfo.version}
+            onLaunch={handleLaunchUpdate}
+          />
+        )}
       </main>
     </>
   )

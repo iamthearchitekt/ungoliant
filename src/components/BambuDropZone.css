@@ -1,0 +1,85 @@
+.bambu-drop-overlay {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(9, 9, 11, 0.9);
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    animation: fadeIn 0.2s ease-out;
+}
+
+.bambu-drop-zone {
+    width: 90%;
+    max-width: 600px;
+    height: 300px;
+    border: 2px dashed var(--accent-primary);
+    border-radius: var(--radius-lg);
+    background-color: rgba(34, 197, 94, 0.05);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-lg);
+    color: var(--text-main);
+    transition: all 0.2s;
+    position: relative;
+    cursor: pointer;
+}
+
+.bambu-drop-zone.active {
+    background-color: rgba(34, 197, 94, 0.15);
+    border-style: solid;
+    transform: scale(1.02);
+    box-shadow: 0 0 30px var(--accent-glow);
+}
+
+.bambu-icon-container {
+    color: var(--accent-primary);
+    filter: drop-shadow(0 0 10px var(--accent-glow));
+}
+
+.bambu-drop-zone h3 {
+    margin: 0;
+    font-size: 1.5rem;
+    letter-spacing: -0.02em;
+}
+
+.bambu-drop-zone p {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    text-align: center;
+    max-width: 300px;
+}
+
+.close-drop-zone {
+    position: absolute;
+    top: var(--spacing-md);
+    right: var(--spacing-md);
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.close-drop-zone:hover {
+    color: var(--text-main);
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}

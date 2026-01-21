@@ -79,15 +79,22 @@ app.whenReady().then(() => {
     autoUpdater.checkForUpdatesAndNotify();
 
     // Update Lifecycle Events
-    autoUpdater.on('update-available', () => {
-        console.log('Update available.');
+    autoUpdater.on('update-available', (info) => {
+        console.log('Update available:', info.version);
+        win?.webContents.send('update-available', info.version);
     });
 
-    autoUpdater.on('update-downloaded', () => {
-        console.log('Update downloaded; will install on quit.');
+    autoUpdater.on('update-downloaded', (info) => {
+        console.log('Update downloaded:', info.version);
+        win?.webContents.send('update-downloaded', info.version);
     });
 
     autoUpdater.on('error', (err) => {
         console.error('Error in auto-updater:', err);
+    });
+
+    // Handle restart and install request from renderer
+    ipcMain.on('restart-and-install', () => {
+        autoUpdater.quitAndInstall();
     });
 });

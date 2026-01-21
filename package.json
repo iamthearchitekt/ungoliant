@@ -1,7 +1,7 @@
 {
   "name": "ungoliant",
   "private": true,
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Professional 3D Print Filament Estimation utility.",
   "author": "BSOD Software <support@bsod.software>",
   "license": "MIT",
@@ -22,7 +22,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@types/jszip": "^3.4.0",
     "electron-updater": "^6.7.3",
+    "jszip": "^3.10.1",
     "lucide-react": "^0.562.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
