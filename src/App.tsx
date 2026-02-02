@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { UnitConverter } from './components/UnitConverter';
 import { TitleBar } from './components/TitleBar';
 import { Calculator } from './components/Calculator';
 import { HelpOverlay } from './components/HelpOverlay';
@@ -39,17 +40,21 @@ function App() {
         opacity: showStinger ? 0 : 1,
         transition: 'opacity 0.5s ease-in'
       }}>
-        <header style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-xs)' }}>
+        <header style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start'
+        }}>
           <img
             src="./logo.png"
             alt="UNGOLIANT"
             style={{
               height: '28px',
               width: 'auto',
-              objectFit: 'contain',
-              alignSelf: 'flex-start'
+              objectFit: 'contain'
             }}
           />
+          <UnitConverter />
         </header>
 
         <Calculator />
@@ -62,7 +67,7 @@ function App() {
           fontSize: '0.75rem',
           letterSpacing: '0.02em'
         }}>
-          version 1.0.4 - a product of BSOD Software
+          version 1.0.5 - a product of BSOD Software
         </footer>
 
         <HelpOverlay />
