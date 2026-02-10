@@ -37,7 +37,10 @@ export function Calculator() {
         isWasteCalcEnabled: false,
         numberOfColors: 4,
         spoolQuantity: 1,
-        spoolsData: [{ index: 0, percentage: 100, status: 'full' }]
+        spoolsData: [{ index: 0, percentage: 100, status: 'full' }],
+        isSupportCalcEnabled: false,
+        supportType: 'normal',
+        supportMass: ''
     });
 
     const [isSmartSyncOpen, setIsSmartSyncOpen] = useState(false);
@@ -61,7 +64,11 @@ export function Calculator() {
         state.plates,
         state.isWasteCalcEnabled,
         state.numberOfColors,
-        state.spoolQuantity
+        state.numberOfColors,
+        state.spoolQuantity,
+        state.isSupportCalcEnabled,
+        state.supportType,
+        state.supportMass
     ]);
 
     const handleChange = (field: keyof CalculationState, value: string | boolean | number) => {
@@ -199,14 +206,21 @@ export function Calculator() {
                                 )}
 
                                 {!state.isAdvanced ? (
-                                    <Input
-                                        label="Print weight"
-                                        placeholder="e.g. 50"
-                                        suffix="g"
-                                        value={state.printWeight}
-                                        onChange={(e) => handleChange('printWeight', e.target.value)}
-                                        style={{ borderColor: 'var(--accent-primary)' }}
-                                    />
+                                    <>
+                                        <Input
+                                            label="Print weight"
+                                            placeholder="e.g. 50"
+                                            suffix="g"
+                                            value={state.printWeight}
+                                            onChange={(e) => handleChange('printWeight', e.target.value)}
+                                            style={{ borderColor: 'var(--accent-primary)' }}
+                                        />
+                                        {state.isSupportCalcEnabled && (
+                                            <div style={{ fontSize: '0.8rem', color: 'var(--text-dim)', fontStyle: 'italic' }}>
+                                                + {state.supportType === 'custom' ? (parseFloat(state.supportMass) || 0).toFixed(0) : (parseFloat(state.printWeight) * (state.supportType === 'tree' ? 0.15 : 0.30) || 0).toFixed(0)}g supports
+                                            </div>
+                                        )}
+                                    </>
                                 ) : (
                                     <div className="plates-container" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-sm)' }}>
                                         {state.plates.map((plate, index) => (
@@ -384,6 +398,67 @@ export function Calculator() {
                                 )}
                             </div>
 
+                            <div className="checkbox-group" style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--spacing-md)' }}>
+                                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                                    <input
+                                        type="checkbox"
+                                        checked={state.isSupportCalcEnabled}
+                                        onChange={(e) => handleChange('isSupportCalcEnabled', e.target.checked)}
+                                        style={{ accentColor: 'var(--accent-primary)' }}
+                                    />
+                                    Include Supports
+                                </label>
+                                {state.isSupportCalcEnabled && (
+                                    <div style={{ marginTop: 'var(--spacing-sm)', paddingLeft: '24px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                        <div style={{ display: 'flex', gap: '12px' }}>
+                                            <label style={{ fontSize: '0.8rem', color: 'var(--text-dim)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                <input
+                                                    type="radio"
+                                                    name="supportType"
+                                                    value="normal"
+                                                    checked={state.supportType === 'normal'}
+                                                    onChange={() => handleChange('supportType', 'normal')}
+                                                    style={{ accentColor: 'var(--accent-primary)' }}
+                                                />
+                                                Normal
+                                            </label>
+                                            <label style={{ fontSize: '0.8rem', color: 'var(--text-dim)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                <input
+                                                    type="radio"
+                                                    name="supportType"
+                                                    value="tree"
+                                                    checked={state.supportType === 'tree'}
+                                                    onChange={() => handleChange('supportType', 'tree')}
+                                                    style={{ accentColor: 'var(--accent-primary)' }}
+                                                />
+                                                Tree
+                                            </label>
+                                            <label style={{ fontSize: '0.8rem', color: 'var(--text-dim)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                <input
+                                                    type="radio"
+                                                    name="supportType"
+                                                    value="custom"
+                                                    checked={state.supportType === 'custom'}
+                                                    onChange={() => handleChange('supportType', 'custom')}
+                                                    style={{ accentColor: 'var(--accent-primary)' }}
+                                                />
+                                                Exact
+                                            </label>
+                                        </div>
+                                        {state.supportType === 'custom' && (
+                                            <Input
+                                                label="Support Weight"
+                                                placeholder="0"
+                                                suffix="g"
+                                                value={state.supportMass}
+                                                onChange={(e) => handleChange('supportMass', e.target.value)}
+                                                style={{ backgroundColor: 'var(--bg-surface)' }}
+                                            />
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+
                         </div>
                     </div>
                 </Card>
@@ -422,17 +497,15 @@ export function Calculator() {
 
 
                     <div className="results-grid">
+                        <div className="result-item highlight">
+                            <span className="label">Total Project Mass</span>
+                            <span className="value">{state.totalProjectWeight.toFixed(0)} <span className="unit">g</span></span>
+                        </div>
                         {state.isAdvanced && (
-                            <>
-                                <div className="result-item highlight">
-                                    <span className="label">Total Project Mass</span>
-                                    <span className="value">{state.totalProjectWeight.toFixed(0)} <span className="unit">g</span></span>
-                                </div>
-                                <div className={`result-item ${state.spoolsNeeded > state.spoolQuantity ? 'insufficient-spools' : 'highlight'}`}>
-                                    <span className="label">Spools Required</span>
-                                    <span className="value">{state.spoolsNeeded} <span className="unit">x</span></span>
-                                </div>
-                            </>
+                            <div className={`result-item ${state.spoolsNeeded > state.spoolQuantity ? 'insufficient-spools' : 'highlight'}`}>
+                                <span className="label">Spools Required</span>
+                                <span className="value">{state.spoolsNeeded} <span className="unit">x</span></span>
+                            </div>
                         )}
                         <div className="result-item">
                             <span className="label">Net Available</span>

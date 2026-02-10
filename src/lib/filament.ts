@@ -41,6 +41,11 @@ export interface CalculationState {
     isPartiallyUsed: boolean;
     inputPercentage: string; // 0-100%
 
+    // Support Calculation
+    isSupportCalcEnabled: boolean;
+    supportType: 'normal' | 'tree' | 'custom';
+    supportMass: string; // g
+
     // Computed
     netWeight: number; // g
     usedWeight: number; // g
@@ -105,6 +110,30 @@ export function calculateFilament(state: CalculationState): Partial<CalculationS
         const wasteMultiplier = 1 + ((state.numberOfColors - 1) * 0.05);
         totalProjectWeight *= wasteMultiplier;
         printRequired *= wasteMultiplier;
+    }
+
+    // Apply Support Calculation
+    let supportWeight = 0;
+    if (state.isSupportCalcEnabled) {
+        if (state.supportType === 'custom') {
+            supportWeight = parseFloat(state.supportMass) || 0;
+        } else {
+            // "Rough estimate" based on original object mass (pre-waste)
+            // Normal = +30%, Tree = +15%
+            const multiplier = state.supportType === 'tree' ? 0.15 : 0.30;
+            supportWeight = (parseFloat(state.printWeight) || 0) * multiplier;
+        }
+
+        // Add support weight to totals
+        // Note: Waste multiplier usually applies to total printed mass, so should we waste-multiply support?
+        // Let's assume support is part of the print, so yes, if AMS is used for support interface, waste applies.
+        // But for simplicity in this "estimate", let's just add it to the total required.
+        // If we want to be very precise, (Object + Support) * WasteMultiplier
+
+        // Let's refine based on user request "rough estimate... guestimate".
+        // Adding support weight directly to totals.
+        totalProjectWeight += supportWeight;
+        printRequired += supportWeight;
     }
 
     // 3. Spools Needed calculation
