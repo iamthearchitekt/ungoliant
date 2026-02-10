@@ -5,8 +5,9 @@ import { SpoolVisualizer } from './SpoolVisualizer';
 import { MATERIALS, calculateFilament } from '../lib/filament';
 import { parseProjectFile } from '../lib/fileParser';
 import type { CalculationState } from '../lib/filament';
-import { Calculator as CalcIcon, DollarSign, Scale, FileUp, X } from 'lucide-react';
+import { Calculator as CalcIcon, DollarSign, Scale, FileUp, X, Gamepad2 } from 'lucide-react';
 import { BambuDropZone } from './BambuDropZone';
+import { ArcadeGame } from './game/ArcadeGame';
 import './Calculator.css';
 
 export function Calculator() {
@@ -44,6 +45,8 @@ export function Calculator() {
     });
 
     const [isSmartSyncOpen, setIsSmartSyncOpen] = useState(false);
+
+    const [isGameOpen, setIsGameOpen] = useState(false);
 
     const [customSpool, setCustomSpool] = useState(false);
 
@@ -524,6 +527,30 @@ export function Calculator() {
                     onClose={() => setIsSmartSyncOpen(false)}
                 />
             )}
+
+            {isGameOpen && (
+                <ArcadeGame onClose={() => setIsGameOpen(false)} />
+            )}
+
+            <div className="calc-footer" style={{
+                position: 'fixed',
+                bottom: '10px',
+                left: '10px',
+                opacity: 0.3
+            }}>
+                <button
+                    onClick={() => setIsGameOpen(true)}
+                    style={{
+                        background: 'none',
+                        border: 'none',
+                        color: 'var(--text-muted)',
+                        cursor: 'pointer'
+                    }}
+                    title="Ungoliant's Revenge"
+                >
+                    <Gamepad2 size={24} />
+                </button>
+            </div>
         </div>
     );
 }
