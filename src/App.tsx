@@ -5,10 +5,13 @@ import { Calculator } from './components/Calculator';
 import { HelpOverlay } from './components/HelpOverlay';
 import { StingerOverlay } from './components/StingerOverlay';
 import { UpdatePopup } from './components/UpdatePopup';
+import { ArcadeGame } from './components/game/ArcadeGame';
+import { Gamepad2 } from 'lucide-react';
 
 function App() {
   const [showStinger, setShowStinger] = useState(true);
   const [updateInfo, setUpdateInfo] = useState<{ version: string } | null>(null);
+  const [isGameOpen, setIsGameOpen] = useState(false);
 
   useEffect(() => {
     // Listen for update events from the main process
@@ -65,9 +68,36 @@ function App() {
           textAlign: 'center',
           color: 'var(--text-dim)',
           fontSize: '0.75rem',
-          letterSpacing: '0.02em'
+          letterSpacing: '0.02em',
+          position: 'relative',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center'
         }}>
-          version 1.0.5 - a product of BSOD Software
+          <div style={{
+            position: 'absolute',
+            left: 0,
+            bottom: 0,
+            opacity: 0.3,
+            transition: 'opacity 0.2s'
+          }}
+            className="game-trigger-container"
+          >
+            <button
+              onClick={() => setIsGameOpen(true)}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--text-muted)',
+                cursor: 'pointer',
+                padding: 'var(--spacing-sm)'
+              }}
+              title="Ungoliant's Revenge"
+            >
+              <Gamepad2 size={20} />
+            </button>
+          </div>
+          version 1.1.2 - a product of BSOD Software
         </footer>
 
         <HelpOverlay />
@@ -77,6 +107,10 @@ function App() {
             version={updateInfo.version}
             onLaunch={handleLaunchUpdate}
           />
+        )}
+
+        {isGameOpen && (
+          <ArcadeGame onClose={() => setIsGameOpen(false)} />
         )}
       </main>
     </>

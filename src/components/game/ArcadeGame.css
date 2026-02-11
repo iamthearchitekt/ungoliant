@@ -66,11 +66,19 @@
     border: none;
     color: #fff;
     cursor: pointer;
+    padding: 12px;
+    margin: -12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
 }
 
 .close-btn:hover {
-    color: #cccccc;
-    transform: scale(1.1);
+    color: #00ff00;
+    transform: scale(1.2);
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
 }
 
 .game-over-screen {
